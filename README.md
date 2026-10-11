@@ -1,6 +1,8 @@
-# GCET908 - Trilha 03: Plataforma de Jogos (Arquitetura MVC)
+# GCET908 - Trabalho 3: Refatoração Arquitetural e Padrões de Projeto
 
 API REST completa para uma **Plataforma de Jogos** (estilo Steam), refatorada para **arquitetura MVC em camadas**, com **Prisma ORM**, persistência em **PostgreSQL**, **injeção de dependência via Factory**, **DTOs**, **erros customizados** e **soft delete**. Desenvolvida para o **Trabalho 3** da disciplina **GCET908 — Desenvolvimento de Software II**.
+
+> Repositório: `gce1908-trilha3-jogos-API-refatorada-com-arquitetura-em-camadas`
 
 ---
 
@@ -588,7 +590,7 @@ Retorno: `{"status":"error","tipo":"NotFoundError","message":"Jogo não encontra
 |---|---|---|
 | Trilha 1 | SQL puro (DDL, DML, JOINs) | Scripts `.sql` |
 | Trilha 2 | Prisma ORM + Migrations | routes -> controllers -> repositories |
-| Trilha 3 | Arquitetura MVC em camadas | routes -> controllers -> services -> repositories |
+| Trilha 3 | Refatoração Arquitetural + Padrões de Projeto | routes -> controllers -> services -> repositories |
 
 ---
 
