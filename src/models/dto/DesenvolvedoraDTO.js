@@ -9,7 +9,7 @@ class DesenvolvedoraDTO {
   }
 
   static toResponse(desenvolvedora) {
-    if (!desenvolvedora) return null;
+    if (!desenvolvedora) {return null;}
 
     return {
       id: desenvolvedora.id,

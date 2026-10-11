@@ -17,7 +17,7 @@ class UsuarioDTO {
    * Converte o resultado do banco em resposta segura (sem senha)
    */
   static toResponse(usuario) {
-    if (!usuario) return null;
+    if (!usuario) {return null;}
 
     return {
       id: usuario.id,

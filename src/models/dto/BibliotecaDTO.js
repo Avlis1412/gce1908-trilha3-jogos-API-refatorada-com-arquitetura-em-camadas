@@ -9,7 +9,7 @@ class BibliotecaDTO {
   }
 
   static toResponse(biblioteca) {
-    if (!biblioteca) return null;
+    if (!biblioteca) {return null;}
 
     return {
       id: biblioteca.id,

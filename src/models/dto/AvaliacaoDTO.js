@@ -11,7 +11,7 @@ class AvaliacaoDTO {
   }
 
   static toResponse(avaliacao) {
-    if (!avaliacao) return null;
+    if (!avaliacao) {return null;}
 
     return {
       id: avaliacao.id,

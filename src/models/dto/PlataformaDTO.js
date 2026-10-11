@@ -8,7 +8,7 @@ class PlataformaDTO {
   }
 
   static toResponse(plataforma) {
-    if (!plataforma) return null;
+    if (!plataforma) {return null;}
 
     return {
       id: plataforma.id,

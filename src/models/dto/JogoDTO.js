@@ -14,7 +14,7 @@ class JogoDTO {
   }
 
   static toResponse(jogo) {
-    if (!jogo) return null;
+    if (!jogo) {return null;}
 
     const precoFinal = jogo.preco - (jogo.preco * jogo.desconto) / 100;
 

@@ -22,7 +22,7 @@ class JogosService {
     }
     if (!Validators.isDescontoValido(dados.desconto)) {
       throw new ValidationError(
-        `Desconto deve estar entre ${REGRAS.DESCONTO_MINIMO} e ${REGRAS.DESCONTO_MAXIMO}%`
+        `Desconto deve estar entre ${REGRAS.DESCONTO_MINIMO} e ${REGRAS.DESCONTO_MAXIMO}%`,
       );
     }
 
@@ -59,7 +59,7 @@ class JogosService {
     }
     if (!Validators.isDescontoValido(dados.desconto)) {
       throw new ValidationError(
-        `Desconto deve estar entre ${REGRAS.DESCONTO_MINIMO} e ${REGRAS.DESCONTO_MAXIMO}%`
+        `Desconto deve estar entre ${REGRAS.DESCONTO_MINIMO} e ${REGRAS.DESCONTO_MAXIMO}%`,
       );
     }
 

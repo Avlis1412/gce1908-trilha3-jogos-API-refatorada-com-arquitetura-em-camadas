@@ -8,7 +8,7 @@ class GeneroDTO {
   }
 
   static toResponse(genero) {
-    if (!genero) return null;
+    if (!genero) {return null;}
 
     return {
       id: genero.id,
