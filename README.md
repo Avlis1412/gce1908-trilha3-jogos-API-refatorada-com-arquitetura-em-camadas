@@ -18,6 +18,18 @@ Evoluir a API do Trabalho 2 (Prisma + Repositories) para uma arquitetura **MVC e
 
 ---
 
+## Documentação Arquitetural
+
+Além deste README, o repositório contém:
+
+| Arquivo | Conteúdo |
+|---|---|
+| [`ARQUITETURA.md`](./ARQUITETURA.md) | Diagrama das camadas, responsabilidades, fluxo completo de requisição e justificativa dos padrões de projeto |
+| [`docs/adr/001-adocao-do-prisma-como-orm.md`](./docs/adr/001-adocao-do-prisma-como-orm.md) | ADR sobre a escolha do Prisma como ORM |
+| [`docs/adr/002-arquitetura-em-camadas-com-mvc.md`](./docs/adr/002-arquitetura-em-camadas-com-mvc.md) | ADR sobre a adoção da arquitetura em camadas com MVC |
+
+---
+
 ## Estrutura do Projeto
 
 ```text
@@ -26,12 +38,14 @@ gce1908-trilha3-jogos-mvc/
 │   ├── schema.sql
 │   ├── seed.sql
 │   └── queries.sql
+├── docs/
+│   └── adr/                      # Architecture Decision Records
+│       ├── 001-adocao-do-prisma-como-orm.md
+│       └── 002-arquitetura-em-camadas-com-mvc.md
 ├── prisma/
 │   ├── migrations/               # Migrations versionadas
-│   │   ├── ..._initial_schema/
-│   │   └── ..._add_desconto_jogo/
 │   ├── schema.prisma             # Fonte da verdade do modelo
-│   └── seed.js                   # Seed com 10+ registros por tabela
+│   └── seed.js                   # Seed reprodutível
 ├── src/
 │   ├── config/
 │   │   └── prisma.js             # Cliente Prisma (Singleton)
@@ -72,12 +86,16 @@ gce1908-trilha3-jogos-mvc/
 │   │   └── avaliacoesService.js
 │   ├── utils/
 │   │   ├── constants.js          # HTTP, mensagens, regras
+│   │   ├── formatters.js         # Formatadores reutilizáveis
 │   │   └── validators.js         # Validações reutilizáveis
 │   ├── app.js                    # Configuração do Express
 │   └── server.js                 # Ponto de entrada
 ├── docker-compose.yml            # Bônus: banco em container
 ├── .env.example
+├── .eslintrc.json
+├── .eslintignore
 ├── .gitignore
+├── ARQUITETURA.md
 ├── package.json
 └── README.md
 ```
@@ -88,26 +106,115 @@ gce1908-trilha3-jogos-mvc/
 
 O fluxo de uma requisição segue esta ordem:
 
-```text
-Cliente HTTP
-    |
-    v
-[ routes ]           -> define qual URL chama qual controller
-    |
-    v
-[ controllers ]      -> traduz HTTP para chamadas de service (req/res)
-    |
-    v
-[ services ]         -> regras de negócio, validações, orquestração
-    |
-    v
-[ repositories ]     -> acesso ao banco via Prisma
-    |
-    v
-[ DTOs ]             -> converte dados de entrada/saída
-    |
-    v
-PostgreSQL
+### Diagrama das Camadas
+
+```mermaid
+flowchart TD
+    Cliente([Cliente HTTP])
+    Routes[Routes<br/>Definicao de URLs]
+    Controllers[Controllers<br/>Traducao HTTP - Dominio]
+    Services[Services<br/>Regras de Negocio]
+    Repositories[Repositories<br/>Acesso a Dados]
+    Prisma[(Prisma ORM)]
+    DB[(PostgreSQL)]
+    Middleware[Middleware de Erros<br/>Preocupacao Transversal]
+
+    Cliente -->|requisicao| Routes
+    Routes --> Controllers
+    Controllers --> Services
+    Services --> Repositories
+    Repositories --> Prisma
+    Prisma --> DB
+    DB -. resposta .-> Prisma
+    Prisma -. resposta .-> Repositories
+    Repositories -. resposta .-> Services
+    Services -. resposta .-> Controllers
+    Controllers -. resposta .-> Routes
+    Routes -. resposta .-> Cliente
+
+    Controllers -. erro .-> Middleware
+    Services -. erro .-> Middleware
+    Repositories -. erro .-> Middleware
+    Middleware -. resposta de erro .-> Cliente
+
+    style Cliente fill:#4A90E2,color:#fff
+    style Routes fill:#7B68EE,color:#fff
+    style Controllers fill:#50C878,color:#fff
+    style Services fill:#FFB84D,color:#000
+    style Repositories fill:#E85D75,color:#fff
+    style Prisma fill:#9B59B6,color:#fff
+    style DB fill:#34495E,color:#fff
+    style Middleware fill:#95A5A6,color:#fff
+```
+
+### Fluxo Completo de uma Requisição
+
+Exemplo: `POST /api/jogos` com JSON no corpo.
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant C as Cliente
+    participant R as Routes
+    participant CT as Controller
+    participant S as Service
+    participant RP as Repository
+    participant P as Prisma
+    participant D as PostgreSQL
+
+    C->>R: POST /api/jogos (JSON)
+    activate R
+    R->>CT: jogosController.criar
+    deactivate R
+
+    activate CT
+    Note over CT: Le req.body<br/>valida presenca dos campos
+    CT->>S: jogosService.criar(dados)
+    deactivate CT
+
+    activate S
+    Note over S: Aplica regras de negocio<br/>valida titulo, preco, desconto
+    S->>RP: jogosRepository.criar(dados)
+    deactivate S
+
+    activate RP
+    RP->>P: prisma.jogo.create(...)
+    deactivate RP
+
+    activate P
+    P->>D: INSERT INTO jogos
+    deactivate P
+
+    activate D
+    D-->>P: registro criado
+    deactivate D
+
+    P-->>RP: objeto Jogo
+    RP-->>S: objeto Jogo
+    S-->>CT: objeto Jogo
+    CT-->>R: res.status(201).json(jogo)
+    R-->>C: 201 Created + JSON
+```
+
+### Fluxo de Erro (mesmo endpoint)
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant C as Cliente
+    participant CT as Controller
+    participant S as Service
+    participant RP as Repository
+    participant P as Prisma
+    participant EH as errorHandler
+
+    C->>CT: POST /api/jogos (JSON invalido)
+    CT->>S: jogosService.criar(dados)
+    S->>S: ValidationError lancado
+    S--x CT: throw ValidationError
+    CT->>EH: next(error)
+    Note over EH: Identifica instanceof AppError<br/>usa error.statusCode
+    EH-->>C: 400 Bad Request + JSON formatado
 ```
 
 ### Responsabilidade de cada camada
@@ -119,6 +226,13 @@ PostgreSQL
 | **services** | Validar, orquestrar, decidir | Conhecer `req`/`res` |
 | **repositories** | Executar queries Prisma | Conter regras de negócio |
 | **DTOs** | Padronizar formato de entrada/saída | Executar queries |
+| **middlewares** | Tratamento centralizado de erros | Conter lógica de negócio |
+
+### Regra fundamental
+
+**Nenhuma camada acessa outra pulando níveis.** O controller não fala com o repository diretamente; o service não conhece `req` nem `res`. Cada camada só conhece a camada imediatamente abaixo.
+
+> Para detalhes adicionais sobre cada decisão arquitetural, consulte o [`ARQUITETURA.md`](./ARQUITETURA.md).
 
 ---
 
@@ -282,6 +396,13 @@ Saída esperada:
 ===============================================================
 ```
 
+### 7. Qualidade de código (ESLint)
+
+```bash
+npm run lint          # verifica
+npm run lint:fix      # corrige automaticamente
+```
+
 ---
 
 ## Alternativa com Docker (bônus)
@@ -358,17 +479,17 @@ Se o usuário já avaliou o jogo, a avaliação é atualizada em vez de duplicad
 
 ## Padrões de Projeto Aplicados
 
-| Padrão | Onde está | Para quê |
+| Padrão | Onde está | Problema que resolve |
 |---|---|---|
-| MVC | Arquitetura geral | Separar responsabilidades |
-| Repository | `src/repositories/` | Isolar acesso a dados |
-| Service Layer | `src/services/` | Concentrar regras de negócio |
-| DTO | `src/models/dto/` | Padronizar formato de entrada/saída |
-| Factory | `src/factories/ServiceFactory.js` | Centralizar criação de services |
-| Dependency Injection | Constructors dos services | Facilitar testes |
-| Singleton | `src/config/prisma.js` | Uma única conexão |
-| Soft Delete | `deletedAt` em todos os models | Preservar histórico |
-| Error Handler centralizado | `src/middlewares/errorHandler.js` | Respostas consistentes |
+| **MVC** | Arquitetura geral | Separa a tradução HTTP do domínio |
+| **Repository** | `src/repositories/` | Isola o acesso ao Prisma do resto da aplicação |
+| **Service Layer** | `src/services/` | Concentra regras de negócio fora do controller |
+| **DTO** | `src/models/dto/` | Desacopla formato de entrada/saída das entidades |
+| **Factory** | `src/factories/ServiceFactory.js` | Centraliza a criação de services com suas dependências |
+| **Dependency Injection** | Constructors dos services | Facilita testes (repositórios podem ser substituídos) |
+| **Singleton** | `src/config/prisma.js` | Uma única instância do PrismaClient (evita múltiplas conexões) |
+| **Soft Delete** | `deletedAt` em todos os models | Preserva histórico de dados |
+| **Middleware Chain** | `src/middlewares/errorHandler.js` | Tratamento centralizado de erros |
 
 ---
 
@@ -401,6 +522,13 @@ Se o usuário já avaliou o jogo, a avaliação é atualizada em vez de duplicad
 - Middleware de erro centralizado
 - AppError e subclasses para erros de negócio
 - DTOs isolam o formato do banco do formato da API
+
+### Qualidade de Código
+
+- ESLint configurado (`.eslintrc.json`)
+- Ausência de dependências circulares
+- Nenhum acesso direto ao Prisma fora da camada de persistência
+- Nenhuma regra de negócio dentro dos controllers
 
 ### Auditoria
 
@@ -448,6 +576,7 @@ Retorno: `{"status":"error","tipo":"NotFoundError","message":"Jogo não encontra
 | ORM | Prisma 6.19.3 |
 | Runtime | Node.js 18+ |
 | Framework | Express 4 |
+| Lint | ESLint 8 |
 | Dev | nodemon |
 | Container | Docker Compose (bônus) |
 
