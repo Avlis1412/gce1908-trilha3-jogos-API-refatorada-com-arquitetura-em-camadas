@@ -1,7 +1,7 @@
 {
-  "name": "jogos",
-  "version": "2.0.0",
-  "description": "API da Plataforma de Jogos com Prisma ORM - GCET908 Trabalho 2",
+  "name": "gce1908-trilha3-jogos-mvc",
+  "version": "3.0.0",
+  "description": "API da Plataforma de Jogos com arquitetura MVC em camadas - GCET908 Trabalho 3",
   "main": "src/server.js",
   "scripts": {
     "start": "node src/server.js",
@@ -18,7 +18,10 @@
     "express",
     "postgresql",
     "prisma",
-    "orm"
+    "orm",
+    "mvc",
+    "factory",
+    "dto"
   ],
   "author": "Adriano Rodrigues da Silva",
   "license": "ISC",
