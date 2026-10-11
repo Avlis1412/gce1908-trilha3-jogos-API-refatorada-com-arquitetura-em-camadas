@@ -33,7 +33,7 @@ Além deste README, o repositório contém:
 ## Estrutura do Projeto
 
 ```text
-gce1908-trilha3-jogos-mvc/
+gce1908-trilha3-jogos-API-refatorada-com-arquitetura-em-camadas/
 ├── database/                     # Scripts SQL de referência (Trilhas 1 e 2)
 │   ├── schema.sql
 │   ├── seed.sql
@@ -335,8 +335,8 @@ erDiagram
 ### 1. Clonar e instalar
 
 ```bash
-git clone https://github.com/Avlis1412/gce1908-trilha3-jogos-mvc.git
-cd gce1908-trilha3-jogos-mvc
+git clone https://github.com/Avlis1412/gce1908-trilha3-jogos-API-refatorada-com-arquitetura-em-camadas.git
+cd gce1908-trilha3-jogos-API-refatorada-com-arquitetura-em-camadas
 npm install
 ```
 
